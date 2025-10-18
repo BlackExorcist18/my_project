@@ -3,7 +3,7 @@ from datetime import date
 
 print("9. Разница дат:")
 # ЗАМЕНИТЕ на вашу дату рождения
-birthday = date(2000, 5, 15)  # Пример: 15 мая 2000 года
+birthday = date(2005, 7, 27)  # Пример: 15 мая 2000 года
 today = date.today()
 
 # Дней с момента рождения
