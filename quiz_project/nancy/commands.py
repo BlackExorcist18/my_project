@@ -78,88 +78,91 @@ def handle_commands(args) -> None:
     tests = load_tests()
     quiz = QuizEngine(tests)
     
-    if args.list_tests:
-        print("\nДоступные тесты:")
-        for i, test_name in enumerate(quiz.list_tests(), 1):
-            print(f"{i}. {test_name}")
-    
-    elif args.create_test:
-        new_test = create_test_interactive()
-        if new_test['questions']:
-            if save_test(new_test):
-                print(f"Тест '{new_test['name']}' успешно создан!")
+    # Исправляем проверку атрибутов
+    if hasattr(args, 'command'):
+        if args.command == 'list':
+            print("\nДоступные тесты:")
+            for i, test_name in enumerate(quiz.list_tests(), 1):
+                print(f"{i}. {test_name}")
+        
+        elif args.command == 'create':
+            new_test = create_test_interactive()
+            if new_test['questions']:
+                if save_test(new_test):
+                    print(f"Тест '{new_test['name']}' успешно создан!")
+                else:
+                    print("Ошибка при сохранении теста")
             else:
-                print("Ошибка при сохранении теста")
-        else:
-            print("Тест не создан - нет вопросов")
-    
-    elif args.run_test:
-        if not quiz.list_tests():
-            print("Нет доступных тестов!")
-            return
+                print("Тест не создан - нет вопросов")
         
-        test_name = args.run_test
-        if not quiz.select_test(test_name):
-            print(f"Тест '{test_name}' не найден!")
-            print("Доступные тесты:", ", ".join(quiz.list_tests()))
-            return
-        
-        # Начинаем тестирование
-        quiz.start_quiz(shuffle=args.shuffle, question_count=args.questions)
-        
-        # Проходим все вопросы
-        while True:
-            question_data = quiz.get_next_question()
-            if not question_data:
-                break
+        elif args.command == 'run':
+            if not quiz.list_tests():
+                print("Нет доступных тестов!")
+                return
             
-            question, options, correct_answer = question_data
-            current, total = quiz.get_progress()
+            test_name = args.run_test
+            if not quiz.select_test(test_name):
+                print(f"Тест '{test_name}' не найден!")
+                print("Доступные тесты:", ", ".join(quiz.list_tests()))
+                return
             
-            print(f"\nВопрос {current}/{total}: {question}")
-            for i, option in enumerate(options, 1):
-                print(f"{i}. {option}")
+            # Начинаем тестирование
+            quiz.start_quiz(shuffle=not args.no_shuffle, question_count=args.questions)
             
+            # Проходим все вопросы
             while True:
-                try:
-                    user_choice = int(input("\nВаш ответ (1-4): ")) - 1
-                    if 0 <= user_choice < len(options):
-                        break
-                    else:
-                        print("Пожалуйста, введите число от 1 до", len(options))
-                except ValueError:
-                    print("Пожалуйста, введите число")
-            
-            is_correct = quiz.check_answer(user_choice, correct_answer)
-            if is_correct:
-                print("✅ Правильно!")
-            else:
-                print(f"❌ Неправильно! Правильный ответ: {options[correct_answer]}")
-        
-        # Показываем результаты
-        results = quiz.get_results()
-        show_results(results)
-        
-        if args.save_results:
-            save_results(results, args.save_results)
-    
-    elif args.show_results:
-        try:
-            with open(args.show_results, 'r', encoding='utf-8') as file:
-                all_results = json.load(file)
-            
-            print(f"\nИстория результатов ({args.show_results}):")
-            print("=" * 50)
-            for result in all_results[-10:]:
-                print(f"Тест: {result['test_name']}")
-                print(f"Результат: {result['score']}/{result['total_questions']} ({result['percentage']:.1f}%)")
-                print(f"Время: {result['timestamp'][:19]}")
-                print("-" * 30)
+                question_data = quiz.get_next_question()
+                if not question_data:
+                    break
                 
-        except FileNotFoundError:
-            print(f"Файл {args.show_results} не найден")
-        except Exception as e:
-            print(f"Ошибка при загрузке результатов: {e}")
+                question, options, correct_answer = question_data
+                current, total = quiz.get_progress()
+                
+                print(f"\nВопрос {current}/{total}: {question}")
+                for i, option in enumerate(options, 1):
+                    print(f"{i}. {option}")
+                
+                while True:
+                    try:
+                        user_choice = int(input("\nВаш ответ (1-4): ")) - 1
+                        if 0 <= user_choice < len(options):
+                            break
+                        else:
+                            print("Пожалуйста, введите число от 1 до", len(options))
+                    except ValueError:
+                        print("Пожалуйста, введите число")
+                
+                is_correct = quiz.check_answer(user_choice, correct_answer)
+                if is_correct:
+                    print("✅ Правильно!")
+                else:
+                    print(f"❌ Неправильно! Правильный ответ: {options[correct_answer]}")
+            
+            # Показываем результаты
+            results = quiz.get_results()
+            show_results(results)
+            
+            if args.save_results:
+                save_results(results, args.save_results)
+        
+        elif args.command == 'results':
+            try:
+                results_file = args.file if hasattr(args, 'file') else 'results.json'
+                with open(results_file, 'r', encoding='utf-8') as file:
+                    all_results = json.load(file)
+                
+                print(f"\nИстория результатов ({results_file}):")
+                print("=" * 50)
+                for result in all_results[-10:]:
+                    print(f"Тест: {result['test_name']}")
+                    print(f"Результат: {result['score']}/{result['total_questions']} ({result['percentage']:.1f}%)")
+                    print(f"Время: {result['timestamp'][:19]}")
+                    print("-" * 30)
+                    
+            except FileNotFoundError:
+                print(f"Файл {results_file} не найден")
+            except Exception as e:
+                print(f"Ошибка при загрузке результатов: {e}")
 
 
 def setup_parser() -> argparse.ArgumentParser:
