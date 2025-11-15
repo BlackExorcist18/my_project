@@ -173,7 +173,7 @@ def setup_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(description='Система тестирования (Quiz)')
     
-    subparsers = parser.add_subparsers(dest='command', help='Доступные команды')
+    subparsers = parser.add_subparsers(dest='command', help='Доступные команды', title='команды')
     
     # Команда list
     list_parser = subparsers.add_parser('list', help='Показать список тестов')
@@ -185,13 +185,11 @@ def setup_parser() -> argparse.ArgumentParser:
     run_parser = subparsers.add_parser('run', help='Запустить тест')
     run_parser.add_argument('run_test', help='Название теста для запуска')
     run_parser.add_argument('--questions', '-q', type=int, help='Количество вопросов')
-    run_parser.add_argument('--no-shuffle', action='store_false', dest='shuffle', 
-                          help='Не перемешивать вопросы')
+    run_parser.add_argument('--no-shuffle', action='store_true', help='Не перемешивать вопросы')
     run_parser.add_argument('--save-results', help='Файл для сохранения результатов')
     
     # Команда results
     results_parser = subparsers.add_parser('results', help='Показать историю результатов')
-    results_parser.add_argument('--file', default='results.json', dest='show_results',
-                              help='Файл с результатами')
+    results_parser.add_argument('--file', default='results.json', help='Файл с результатами')
     
     return parser
