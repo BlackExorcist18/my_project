@@ -1,3 +1,9 @@
+"""Модуль обработки командной строки.
+
+Содержит функции для настройки парсера аргументов и обработки 
+пользовательских команд.
+"""
+
 import argparse
 import json
 from typing import List
@@ -5,8 +11,13 @@ from .loader import load_tests, save_test
 from .engine import QuizEngine
 from .results import show_results, save_results
 
+
 def create_test_interactive() -> dict:
-    """Интерактивное создание нового теста"""
+    """Интерактивно создает новый тест через ввод пользователя.
+    
+    Returns:
+        dict: Словарь с данными нового теста.
+    """
     print("\nСоздание нового теста")
     print("=" * 30)
     
@@ -57,8 +68,13 @@ def create_test_interactive() -> dict:
         'questions': questions
     }
 
+
 def handle_commands(args) -> None:
-    """Обработка команд"""
+    """Обрабатывает команды пользователя из командной строки.
+    
+    Args:
+        args: Аргументы командной строки, полученные от argparse.
+    """
     tests = load_tests()
     quiz = QuizEngine(tests)
     
@@ -134,7 +150,7 @@ def handle_commands(args) -> None:
             
             print(f"\nИстория результатов ({args.show_results}):")
             print("=" * 50)
-            for result in all_results[-10:]:  # Последние 10 результатов
+            for result in all_results[-10:]:
                 print(f"Тест: {result['test_name']}")
                 print(f"Результат: {result['score']}/{result['total_questions']} ({result['percentage']:.1f}%)")
                 print(f"Время: {result['timestamp'][:19]}")
@@ -145,8 +161,13 @@ def handle_commands(args) -> None:
         except Exception as e:
             print(f"Ошибка при загрузке результатов: {e}")
 
+
 def setup_parser() -> argparse.ArgumentParser:
-    """Настройка парсера аргументов"""
+    """Настраивает парсер аргументов командной строки.
+    
+    Returns:
+        argparse.ArgumentParser: Настроенный парсер аргументов.
+    """
     parser = argparse.ArgumentParser(description='Система тестирования (Quiz)')
     
     subparsers = parser.add_subparsers(dest='command', help='Доступные команды')
