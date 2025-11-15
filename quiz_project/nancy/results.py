@@ -1,9 +1,20 @@
+"""Модуль для работы с результатами тестирования.
+
+Предоставляет функции для отображения и сохранения результатов 
+тестирования в файлы.
+"""
+
 import json
 from typing import Dict, Any
 import datetime
 
+
 def show_results(results: Dict[str, Any]) -> None:
-    """Показать результаты тестирования"""
+    """Отображает результаты тестирования в консоли.
+    
+    Args:
+        results (Dict[str, Any]): Словарь с результатами теста.
+    """
     print("\n" + "=" * 50)
     print("РЕЗУЛЬТАТЫ ТЕСТИРОВАНИЯ")
     print("=" * 50)
@@ -17,8 +28,17 @@ def show_results(results: Dict[str, Any]) -> None:
         print("❌ ТЕСТ НЕ ПРОЙДЕН!")
     print("=" * 50)
 
+
 def save_results(results: Dict[str, Any], filename: str = "results.json") -> bool:
-    """Сохранить результаты в файл"""
+    """Сохраняет результаты тестирования в JSON файл.
+    
+    Args:
+        results (Dict[str, Any]): Словарь с результатами теста.
+        filename (str): Имя файла для сохранения. По умолчанию "results.json".
+        
+    Returns:
+        bool: True если сохранение успешно, False в случае ошибки.
+    """
     try:
         # Загружаем существующие результаты
         try:
