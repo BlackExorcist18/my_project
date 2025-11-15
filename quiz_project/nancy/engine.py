@@ -1,5 +1,5 @@
 import random
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 
 class QuizEngine:
     def __init__(self, tests: List[Dict[str, Any]]):
@@ -47,7 +47,7 @@ class QuizEngine:
         print(f"Количество вопросов: {self.total_questions}")
         print("=" * 50)
     
-    def get_next_question(self) -> Tuple[str, List[str], int] or None:
+    def get_next_question(self) -> Optional[Tuple[str, List[str], int]]:
         """Получить следующий вопрос"""
         if self.current_question_index >= len(self.current_questions):
             return None
