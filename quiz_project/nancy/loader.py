@@ -1,10 +1,26 @@
+"""Модуль для загрузки и сохранения тестов из/в JSON файлов.
+
+Предоставляет функции для работы с файловой системой при 
+хранении данных тестов и результатов.
+"""
+
 import json
 import os
 from typing import List, Dict, Any
 
+
 def load_tests(filename: str = "tests.json") -> List[Dict[str, Any]]:
-    """
-    Загрузка тестов из JSON файла
+    """Загружает тесты из JSON файла.
+
+    Args:
+        filename (str): Имя файла для загрузки. По умолчанию "tests.json".
+
+    Returns:
+        List[Dict[str, Any]]: Список тестов, каждый тест представлен словарем.
+
+    Raises:
+        JSONDecodeError: Если файл содержит некорректный JSON.
+        Exception: При других ошибках чтения файла.
     """
     try:
         if not os.path.exists(filename):
@@ -24,9 +40,16 @@ def load_tests(filename: str = "tests.json") -> List[Dict[str, Any]]:
         print(f"Ошибка при загрузке тестов: {e}")
         return []
 
+
 def save_tests(tests: List[Dict[str, Any]], filename: str = "tests.json") -> bool:
-    """
-    Сохранение тестов в JSON файл
+    """Сохраняет список тестов в JSON файл.
+
+    Args:
+        tests (List[Dict[str, Any]]): Список тестов для сохранения.
+        filename (str): Имя файла для сохранения. По умолчанию "tests.json".
+
+    Returns:
+        bool: True если сохранение успешно, False в случае ошибки.
     """
     try:
         with open(filename, 'w', encoding='utf-8') as file:
@@ -37,9 +60,16 @@ def save_tests(tests: List[Dict[str, Any]], filename: str = "tests.json") -> boo
         print(f"Ошибка при сохранении тестов: {e}")
         return False
 
+
 def save_test(test_data: Dict[str, Any], filename: str = "tests.json") -> bool:
-    """
-    Добавление нового теста в файл
+    """Добавляет новый тест в файл с тестами.
+
+    Args:
+        test_data (Dict[str, Any]): Данные нового теста.
+        filename (str): Имя файла для сохранения. По умолчанию "tests.json".
+
+    Returns:
+        bool: True если сохранение успешно, False в случае ошибки.
     """
     try:
         tests = load_tests(filename)
