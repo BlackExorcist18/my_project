@@ -2,16 +2,75 @@
 
 import argparse
 import json
-from typing import List
+from typing import List, Dict, Any
 from .loader import load_tests, save_test, init_database
 from .engine import QuizEngine
 from .results import show_results, save_results, show_database_results
 
-# ... (остальной код остается таким же, добавляем новые команды)
+
+def create_test_interactive() -> Dict[str, Any]:
+    """Интерактивно создает новый тест через ввод пользователя.
+    
+    Returns:
+        Dict[str, Any]: Словарь с данными нового теста.
+    """
+    print("\nСоздание нового теста")
+    print("=" * 30)
+    
+    test_name = input("Название теста: ")
+    test_description = input("Описание теста: ")
+    
+    questions = []
+    
+    while True:
+        print(f"\nВопрос #{len(questions) + 1}")
+        question_text = input("Текст вопроса: ")
+        
+        if not question_text:
+            break
+        
+        options = []
+        for i in range(4):
+            option = input(f"Вариант ответа {i + 1}: ")
+            if option:
+                options.append(option)
+        
+        if len(options) < 2:
+            print("Нужно как минимум 2 варианта ответа!")
+            continue
+        
+        try:
+            correct = int(input(f"Номер правильного ответа (1-{len(options)}): ")) - 1
+            if correct < 0 or correct >= len(options):
+                print("Неверный номер правильного ответа!")
+                continue
+        except ValueError:
+            print("Введите число!")
+            continue
+        
+        questions.append({
+            'question': question_text,
+            'options': options,
+            'correct_answer': correct
+        })
+        
+        add_more = input("Добавить еще вопрос? (y/n): ").lower()
+        if add_more != 'y':
+            break
+    
+    return {
+        'name': test_name,
+        'description': test_description,
+        'questions': questions
+    }
+
 
 def handle_commands(args) -> None:
-    """Обрабатывает команды пользователя из командной строки."""
+    """Обрабатывает команды пользователя из командной строки.
     
+    Args:
+        args: Аргументы командной строки, полученные от argparse.
+    """
     # Инициализация базы данных если нужно
     use_database = getattr(args, 'use_database', False)
     if use_database:
@@ -48,7 +107,8 @@ def handle_commands(args) -> None:
                 return
             
             # Начинаем тестирование
-            quiz.start_quiz(shuffle=not args.no_shuffle, question_count=args.questions)
+            quiz.start_quiz(shuffle=not getattr(args, 'no_shuffle', False), 
+                          question_count=getattr(args, 'questions', None))
             
             # Проходим все вопросы
             while True:
@@ -83,16 +143,19 @@ def handle_commands(args) -> None:
             results = quiz.get_results()
             show_results(results)
             
-            if args.save_results:
+            if hasattr(args, 'save_results') and args.save_results:
                 save_results(results, args.save_results, use_database=use_database)
         
         elif args.command == 'results':
             if use_database:
-                show_database_results(getattr(args, 'test_name', None), getattr(args, 'limit', 10))
+                show_database_results(
+                    getattr(args, 'test_name', None), 
+                    getattr(args, 'limit', 10)
+                )
             else:
                 # Старая логика для файлов
                 try:
-                    results_file = args.file if hasattr(args, 'file') else 'results.json'
+                    results_file = getattr(args, 'file', 'results.json')
                     with open(results_file, 'r', encoding='utf-8') as file:
                         all_results = json.load(file)
                     
@@ -110,11 +173,19 @@ def handle_commands(args) -> None:
                     print(f"Ошибка при загрузке результатов: {e}")
         
         elif args.command == 'init_db':
-            init_database()
-            print("✅ База данных инициализирована")
+            db = init_database()
+            if db:
+                print("✅ База данных инициализирована")
+            else:
+                print("❌ Ошибка инициализации базы данных")
+
 
 def setup_parser() -> argparse.ArgumentParser:
-    """Настраивает парсер аргументов командной строки."""
+    """Настраивает парсер аргументов командной строки.
+    
+    Returns:
+        argparse.ArgumentParser: Настроенный парсер аргументов.
+    """
     parser = argparse.ArgumentParser(description='Система тестирования (Quiz)')
     
     subparsers = parser.add_subparsers(dest='command', help='Доступные команды', title='команды')
