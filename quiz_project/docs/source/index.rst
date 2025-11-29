@@ -1,17 +1,34 @@
-.. Система тестирования documentation master file, created by
-   sphinx-quickstart on Sat Nov 29 15:11:29 2025.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Система тестирования documentation
+Документация системы тестирования
 ==================================
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
-
+Добро пожаловать в документацию системы тестирования (Quiz)!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Содержание:
 
+   modules
+
+Быстрый старт
+-------------
+
+Основные команды:
+
+.. code-block:: bash
+
+   python main.py list
+   python main.py create  
+   python main.py run "Название теста"
+   python main.py results
+
+Описание
+--------
+
+Консольное приложение для создания и прохождения тестов.
+
+Индексы и таблицы
+=================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
