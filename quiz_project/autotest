@@ -1,0 +1,392 @@
+#!/usr/bin/env python3
+"""Автотесты для системы тестирования (Quiz).
+
+Запуск: python run_tests.py
+Результаты сохраняются в test_results.json
+"""
+
+import json
+import os
+import sys
+import tempfile
+import shutil
+from datetime import datetime
+from typing import Dict, Any, List
+
+# Добавляем путь к проекту
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+
+class QuizTester:
+    """Класс для запуска автотестов системы тестирования."""
+    
+    def __init__(self):
+        self.results = {
+            "timestamp": datetime.now().isoformat(),
+            "total_tests": 0,
+            "passed": 0,
+            "failed": 0,
+            "tests": []
+        }
+        self.temp_dir = None
+        
+    def setup(self):
+        """Настройка тестового окружения."""
+        print("🔧 Настройка тестового окружения...")
+        self.temp_dir = tempfile.mkdtemp(prefix="quiz_test_")
+        print(f"📁 Временная папка: {self.temp_dir}")
+        
+        # Создаем тестовые файлы
+        self.create_test_files()
+        
+    def teardown(self):
+        """Очистка тестового окружения."""
+        if self.temp_dir and os.path.exists(self.temp_dir):
+            print(f"🧹 Очистка временной папки: {self.temp_dir}")
+            shutil.rmtree(self.temp_dir)
+    
+    def create_test_files(self):
+        """Создание тестовых файлов с тестами."""
+        test_data = [
+            {
+                "name": "Математика для начинающих",
+                "description": "Простые математические вопросы",
+                "questions": [
+                    {
+                        "question": "Сколько будет 2 + 2?",
+                        "options": ["3", "4", "5", "6"],
+                        "correct_answer": 1
+                    },
+                    {
+                        "question": "Сколько будет 3 * 3?",
+                        "options": ["6", "9", "12", "15"],
+                        "correct_answer": 1
+                    }
+                ]
+            },
+            {
+                "name": "География",
+                "description": "Основы географии",
+                "questions": [
+                    {
+                        "question": "Столица России?",
+                        "options": ["Москва", "Санкт-Петербург", "Казань", "Новосибирск"],
+                        "correct_answer": 0
+                    }
+                ]
+            }
+        ]
+        
+        # Сохраняем тестовые файлы
+        tests_file = os.path.join(self.temp_dir, "tests.json")
+        with open(tests_file, 'w', encoding='utf-8') as f:
+            json.dump(test_data, f, ensure_ascii=False, indent=2)
+        
+        print(f"✅ Создан тестовый файл: {tests_file}")
+        return tests_file
+    
+    def run_test(self, test_name: str, test_func) -> Dict[str, Any]:
+        """Запуск отдельного теста.
+        
+        Args:
+            test_name: Название теста.
+            test_func: Функция теста.
+            
+        Returns:
+            Результат теста.
+        """
+        print(f"\n{'='*60}")
+        print(f"🧪 ТЕСТ: {test_name}")
+        print(f"{'='*60}")
+        
+        test_result = {
+            "name": test_name,
+            "status": "PASSED",
+            "error": None,
+            "duration": None
+        }
+        
+        start_time = datetime.now()
+        
+        try:
+            test_func()
+            test_result["status"] = "PASSED"
+            print(f"✅ {test_name}: ПРОЙДЕН")
+            self.results["passed"] += 1
+            
+        except AssertionError as e:
+            test_result["status"] = "FAILED"
+            test_result["error"] = f"AssertionError: {str(e)}"
+            print(f"❌ {test_name}: НЕ ПРОЙДЕН - {e}")
+            self.results["failed"] += 1
+            
+        except Exception as e:
+            test_result["status"] = "FAILED"
+            test_result["error"] = f"Exception: {type(e).__name__}: {str(e)}"
+            print(f"❌ {test_name}: ОШИБКА - {type(e).__name__}: {e}")
+            self.results["failed"] += 1
+            
+        finally:
+            end_time = datetime.now()
+            test_result["duration"] = (end_time - start_time).total_seconds()
+            
+        self.results["tests"].append(test_result)
+        self.results["total_tests"] += 1
+        
+        return test_result
+    
+    def test_loader_module(self):
+        """Тестирование модуля loader."""
+        from nancy import loader
+        
+        tests_file = os.path.join(self.temp_dir, "tests.json")
+        
+        # Тест 1: Загрузка тестов из файла
+        tests = loader.load_tests_from_file(tests_file)
+        assert len(tests) == 2, f"Ожидалось 2 теста, получено {len(tests)}"
+        assert tests[0]["name"] == "Математика для начинающих"
+        assert len(tests[0]["questions"]) == 2
+        
+        # Тест 2: Сохранение тестов
+        new_test = {
+            "name": "Новый тест",
+            "description": "Описание",
+            "questions": [{"question": "Вопрос?", "options": ["Да", "Нет"], "correct_answer": 0}]
+        }
+        
+        result = loader.save_test_to_file(new_test, tests_file)
+        assert result is True, "Сохранение теста не удалось"
+        
+        # Тест 3: Проверка что тест добавился
+        tests = loader.load_tests_from_file(tests_file)
+        assert len(tests) == 3, f"После добавления ожидалось 3 теста, получено {len(tests)}"
+        
+        print("✅ Все тесты модуля loader прошли успешно")
+    
+    def test_engine_module(self):
+        """Тестирование модуля engine."""
+        from nancy import loader, engine
+        
+        tests_file = os.path.join(self.temp_dir, "tests.json")
+        tests = loader.load_tests_from_file(tests_file)
+        
+        # Создаем движок тестирования
+        quiz = engine.QuizEngine(tests)
+        
+        # Тест 1: Список тестов
+        test_list = quiz.list_tests()
+        assert len(test_list) == 2, f"Ожидалось 2 теста в списке, получено {len(test_list)}"
+        assert "Математика для начинающих" in test_list
+        
+        # Тест 2: Выбор теста
+        selected = quiz.select_test("Математика для начинающих")
+        assert selected is True, "Не удалось выбрать тест"
+        
+        # Тест 3: Начало тестирования
+        quiz.start_quiz(shuffle=False)
+        assert quiz.total_questions == 2, f"Ожидалось 2 вопроса, получено {quiz.total_questions}"
+        
+        # Тест 4: Получение вопросов
+        question1 = quiz.get_next_question()
+        assert question1 is not None, "Не удалось получить первый вопрос"
+        
+        question_text, options, correct_answer = question1
+        assert question_text == "Сколько будет 2 + 2?"
+        assert len(options) == 4
+        assert correct_answer == 1
+        
+        # Тест 5: Проверка ответов
+        is_correct = quiz.check_answer(1, 1)  # Правильный ответ
+        assert is_correct is True, "Правильный ответ должен быть True"
+        assert quiz.score == 1, f"Ожидался счет 1, получено {quiz.score}"
+        
+        is_correct = quiz.check_answer(0, 1)  # Неправильный ответ
+        assert is_correct is False, "Неправильный ответ должен быть False"
+        
+        print("✅ Все тесты модуля engine прошли успешно")
+    
+    def test_results_module(self):
+        """Тестирование модуля results."""
+        from nancy import results
+        
+        # Тестовые результаты
+        test_results = {
+            "test_name": "Тестовый тест",
+            "score": 8,
+            "total_questions": 10,
+            "percentage": 80.0,
+            "passed": True
+        }
+        
+        # Тест 1: Показ результатов (должен работать без ошибок)
+        try:
+            results.show_results(test_results)
+            print("✅ show_results выполнен без ошибок")
+        except Exception as e:
+            raise AssertionError(f"show_results вызвал ошибку: {e}")
+        
+        # Тест 2: Сохранение в файл
+        results_file = os.path.join(self.temp_dir, "results.json")
+        save_result = results.save_results_to_file(test_results, results_file)
+        assert save_result is True, "Сохранение результатов не удалось"
+        
+        # Тест 3: Проверка что файл создан
+        assert os.path.exists(results_file), "Файл результатов не создан"
+        
+        # Тест 4: Проверка содержимого файла
+        with open(results_file, 'r', encoding='utf-8') as f:
+            saved_data = json.load(f)
+        
+        assert len(saved_data) == 1, "В файле должен быть 1 результат"
+        assert saved_data[0]["test_name"] == "Тестовый тест"
+        assert saved_data[0]["score"] == 8
+        
+        print("✅ Все тесты модуля results прошли успешно")
+    
+    def test_argparse_commands(self):
+        """Тестирование обработки аргументов командной строки."""
+        from nancy import commands
+        import argparse
+        
+        # Тест 1: Создание парсера
+        parser = commands.setup_parser()
+        assert isinstance(parser, argparse.ArgumentParser)
+        
+        # Тест 2: Парсинг команды list
+        args = parser.parse_args(["list"])
+        assert args.command == "list"
+        
+        # Тест 3: Парсинг команды run с аргументами
+        args = parser.parse_args(["run", "Математика", "--questions", "5", "--no-shuffle"])
+        assert args.command == "run"
+        assert args.run_test == "Математика"
+        assert args.questions == 5
+        assert args.no_shuffle is True
+        
+        print("✅ Все тесты argparse прошли успешно")
+    
+    def test_integration(self):
+        """Интеграционный тест - полный цикл работы."""
+        from nancy import loader, engine, results
+        
+        tests_file = os.path.join(self.temp_dir, "tests.json")
+        
+        # 1. Загружаем тесты
+        tests = loader.load_tests_from_file(tests_file)
+        
+        # 2. Создаем и настраиваем движок
+        quiz = engine.QuizEngine(tests)
+        quiz.select_test("Математика для начинающих")
+        quiz.start_quiz(shuffle=False)
+        
+        # 3. Проходим все вопросы
+        total_questions = 0
+        correct_answers = 0
+        
+        while True:
+            question_data = quiz.get_next_question()
+            if question_data is None:
+                break
+            
+            question_text, options, correct_answer = question_data
+            total_questions += 1
+            
+            # Имитируем правильный ответ на все вопросы
+            is_correct = quiz.check_answer(correct_answer, correct_answer)
+            if is_correct:
+                correct_answers += 1
+        
+        # 4. Проверяем результаты
+        assert total_questions == 2, f"Ожидалось 2 вопроса, пройдено {total_questions}"
+        assert correct_answers == 2, f"Ожидалось 2 правильных ответа, получено {correct_answers}"
+        assert quiz.score == 2, f"Ожидался счет 2, получено {quiz.score}"
+        
+        # 5. Получаем и сохраняем результаты
+        quiz_results = quiz.get_results()
+        assert quiz_results["test_name"] == "Математика для начинающих"
+        assert quiz_results["score"] == 2
+        assert quiz_results["percentage"] == 100.0
+        assert quiz_results["passed"] is True
+        
+        # 6. Сохраняем в файл
+        results_file = os.path.join(self.temp_dir, "integration_results.json")
+        results.save_results_to_file(quiz_results, results_file)
+        
+        print("✅ Интеграционный тест пройден успешно")
+    
+    def save_results(self, filename: str = "test_results.json"):
+        """Сохранение результатов тестирования в JSON файл.
+        
+        Args:
+            filename: Имя файла для сохранения результатов.
+        """
+        # Добавляем статистику
+        self.results["success_rate"] = (self.results["passed"] / self.results["total_tests"] * 100) if self.results["total_tests"] > 0 else 0
+        
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(self.results, f, ensure_ascii=False, indent=2)
+        
+        print(f"\n📊 Результаты тестирования сохранены в {filename}")
+        
+        # Выводим сводку
+        print("\n" + "="*60)
+        print("📈 СВОДКА ТЕСТИРОВАНИЯ")
+        print("="*60)
+        print(f"Всего тестов: {self.results['total_tests']}")
+        print(f"Пройдено: {self.results['passed']} ✅")
+        print(f"Не пройдено: {self.results['failed']} ❌")
+        print(f"Успешность: {self.results['success_rate']:.1f}%")
+        
+        if self.results['failed'] > 0:
+            print("\n❌ Неудачные тесты:")
+            for test in self.results['tests']:
+                if test['status'] == 'FAILED':
+                    print(f"  - {test['name']}: {test['error']}")
+    
+    def run_all_tests(self):
+        """Запуск всех тестов."""
+        print("🚀 ЗАПУСК АВТОТЕСТОВ СИСТЕМЫ ТЕСТИРОВАНИЯ")
+        print("="*60)
+        
+        self.setup()
+        
+        try:
+            # Запускаем все тесты
+            self.run_test("Модуль loader", self.test_loader_module)
+            self.run_test("Модуль engine", self.test_engine_module)
+            self.run_test("Модуль results", self.test_results_module)
+            self.run_test("Аргументы командной строки", self.test_argparse_commands)
+            self.run_test("Интеграционный тест", self.test_integration)
+            
+            # Сохраняем результаты
+            self.save_results()
+            
+        finally:
+            self.teardown()
+
+
+def main():
+    """Главная функция запуска тестов."""
+    tester = QuizTester()
+    
+    try:
+        tester.run_all_tests()
+        
+        # Возвращаем код выхода в зависимости от результата
+        if tester.results["failed"] == 0:
+            print("\n🎉 ВСЕ ТЕСТЫ ПРОЙДЕНЫ УСПЕШНО!")
+            sys.exit(0)
+        else:
+            print(f"\n⚠️  ПРОЙДЕНО {tester.results['passed']}/{tester.results['total_tests']} тестов")
+            sys.exit(1)
+            
+    except KeyboardInterrupt:
+        print("\n\n⏹️  Тестирование прервано пользователем")
+        sys.exit(130)
+    except Exception as e:
+        print(f"\n💥 Критическая ошибка: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
