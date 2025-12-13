@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-13T14:33:03.507205",
+  "timestamp": "2025-12-13T15:00:34.276142",
   "total_tests": 5,
   "passed": 4,
   "failed": 1,
@@ -8,31 +8,31 @@
       "name": "Модуль loader",
       "status": "PASSED",
       "error": null,
-      "duration": 1.069486
+      "duration": 0.275051
     },
     {
       "name": "Модуль engine",
       "status": "FAILED",
       "error": "AssertionError: Ожидалось 2 теста в списке, получено 3",
-      "duration": 0.001997
+      "duration": 0.0
     },
     {
       "name": "Модуль results",
       "status": "PASSED",
       "error": null,
-      "duration": 0.013799
+      "duration": 0.017587
     },
     {
       "name": "Аргументы командной строки",
       "status": "PASSED",
       "error": null,
-      "duration": 0.012968
+      "duration": 0.013516
     },
     {
       "name": "Интеграционный тест",
       "status": "PASSED",
       "error": null,
-      "duration": 0.001088
+      "duration": 0.004401
     }
   ],
   "success_rate": 80.0
